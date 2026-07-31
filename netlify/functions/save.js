@@ -8,6 +8,7 @@ export async function handler(event, context) {
     const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
     const AIRTABLE_BASE_ID = "appOnjwF4xcrYZUER";
     const TABLE_NAME = "tbl0A8bcJjNlpEyhG";
+    const RESEND_API_KEY = process.env.RESEND_API_KEY; // Додано ключ
     
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
       return { 
@@ -17,8 +18,9 @@ export async function handler(event, context) {
     }
 
     let fields = {};
+    const isWaitlist = data.type === "waitlist"; // Визначаємо тип форми
 
-    if (data.type === "waitlist") {
+    if (isWaitlist) {
       fields = {
         "Email": data.email,
         "Date": data.timestamp ? data.timestamp.split('T')[0] : new Date().toISOString().split('T')[0]
@@ -39,6 +41,7 @@ export async function handler(event, context) {
       };
     }
 
+    // 1. Відправка в Airtable
     const airtableResponse = await fetch(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}`,
       {
@@ -60,6 +63,39 @@ export async function handler(event, context) {
       };
     }
 
+    // 2. Відправка email через Resend (якщо користувач вказав пошту)
+    if (data.email) {
+      const emailSubject = isWaitlist 
+          ? "ти в списку 👀" 
+          : "перший вимір є ✓";
+
+      const emailHtml = isWaitlist
+          ? `<p>Привіт!</p>
+             <p>Ми тебе запамʼятали.</p>
+             <p>Коли бета буде готова — напишемо першим. А поки що можеш зайти на сайт і побачити як це працює — є короткий тест, надрукуй одне речення і отримаєш свій показник прямо зараз.</p>
+             <p>— команда NeRN</p>`
+          : `<p>Привіт!</p>
+             <p>Перша точка є — і це вже щось.</p>
+             <p>Але одного виміру замало, щоб побачити справжню картину. Когніція природно коливається протягом дня і тижня, тому сім вимірів приблизно в один час дають набагато чіткіший сигнал.</p>
+             <p>Повертайся завтра о тій самій годині — нагадаємо.</p>
+             <p>— команда NeRN</p>`;
+
+      await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${RESEND_API_KEY}`
+          },
+          body: JSON.stringify({
+              from: "NeRN <onboarding@resend.dev>",
+              to: [data.email], 
+              subject: emailSubject,
+              html: emailHtml
+          })
+      });
+    }
+
+    // 3. Успішна відповідь фронтенду
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, record: result })
@@ -71,31 +107,3 @@ export async function handler(event, context) {
     };
   }
 }
-const emailSubject = isWaitlist 
-    ? "ти в списку 👀" 
-    : "перший вимір є ✓";
-
-const emailHtml = isWaitlist
-    ? `<p>Привіт!</p>
-       <p>Ми тебе запамʼятали.</p>
-       <p>Коли бета буде готова — напишемо першим. А поки що можеш зайти на сайт і побачити як це працює — є короткий тест, надрукуй одне речення і отримаєш свій показник прямо зараз.</p>
-       <p>— команда NeRN</p>`
-    : `<p>Привіт!</p>
-       <p>Перша точка є — і це вже щось.</p>
-       <p>Але одного виміру замало, щоб побачити справжню картину. Когніція природно коливається протягом дня і тижня, тому сім вимірів приблизно в один час дають набагато чіткіший сигнал.</p>
-       <p>Повертайся завтра о тій самій годині — нагадаємо.</p>
-       <p>— команда NeRN</p>`;
-
-await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`
-    },
-    body: JSON.stringify({
-        from: "NeRN <onboarding@resend.dev>",
-        to: [userEmail], // Змінна з поштою користувача
-        subject: emailSubject,
-        html: emailHtml
-    })
-});
