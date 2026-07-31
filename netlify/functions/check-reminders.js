@@ -7,7 +7,6 @@ export const handler = schedule("0 * * * *", async (event, context) => {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     try {
-        // 1. Отримуємо всі записи з Airtable
         const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`, {
             headers: {
                 Authorization: `Bearer ${AIRTABLE_PAT}`
@@ -28,14 +27,10 @@ export const handler = schedule("0 * * * *", async (event, context) => {
 
             const firstTestDate = new Date(firstTestTimeStr);
             
-            // Перевіряємо, чи минуло менше ніж 7 днів
             const diffDays = (now - firstTestDate) / (1000 * 60 * 60 * 24);
             if (diffDays > 7) continue;
 
-            // Перевіряємо збіг години та хвилини (в межах години запуску cron)
             if (now.getUTCHours() === firstTestDate.getUTCHours()) {
-                
-                // 2. Надсилаємо email через Resend API
                 await fetch("https://api.resend.com/emails", {
                     method: "POST",
                     headers: {
@@ -50,7 +45,6 @@ export const handler = schedule("0 * * * *", async (event, context) => {
                     })
                 });
 
-                // 3. Оновлюємо лічильник відправлених нагадувань в Airtable
                 await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}/${record.id}`, {
                     method: "PATCH",
                     headers: {
