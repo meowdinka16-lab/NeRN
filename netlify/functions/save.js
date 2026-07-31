@@ -71,3 +71,31 @@ export async function handler(event, context) {
     };
   }
 }
+const emailSubject = isWaitlist 
+    ? "ти в списку 👀" 
+    : "перший вимір є ✓";
+
+const emailHtml = isWaitlist
+    ? `<p>Привіт!</p>
+       <p>Ми тебе запамʼятали.</p>
+       <p>Коли бета буде готова — напишемо першим. А поки що можеш зайти на сайт і побачити як це працює — є короткий тест, надрукуй одне речення і отримаєш свій показник прямо зараз.</p>
+       <p>— команда NeRN</p>`
+    : `<p>Привіт!</p>
+       <p>Перша точка є — і це вже щось.</p>
+       <p>Але одного виміру замало, щоб побачити справжню картину. Когніція природно коливається протягом дня і тижня, тому сім вимірів приблизно в один час дають набагато чіткіший сигнал.</p>
+       <p>Повертайся завтра о тій самій годині — нагадаємо.</p>
+       <p>— команда NeRN</p>`;
+
+await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`
+    },
+    body: JSON.stringify({
+        from: "NeRN <onboarding@resend.dev>",
+        to: [userEmail], // Змінна з поштою користувача
+        subject: emailSubject,
+        html: emailHtml
+    })
+});
