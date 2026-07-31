@@ -6,7 +6,7 @@ export const handler = schedule("0 * * * *", async (event, context) => {
     const TABLE_NAME = "tbl0A8bcJjNlpEyhG";
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-    const SITE_URL = "https://твій-сайт.com/test"; // ЗАМІНИ НА СВІЙ ЛІНК
+    const SITE_URL = "https://nernweb.netlify.app/"; 
 
     const templates = [
         { // 0 відправлених -> Нагадування 1
