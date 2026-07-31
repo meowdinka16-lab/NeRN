@@ -7,7 +7,7 @@ export async function handler(event, context) {
     const data = JSON.parse(event.body);
     const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
     const AIRTABLE_BASE_ID = "appOnjwF4xcrYZUER";
-    const TABLE_NAME = "tbl0A8bcJjNlpEyhG"; // Замінили назву на ID таблиці
+    const TABLE_NAME = "tbl0A8bcJjNlpEyhG";
     
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
       return { 
@@ -33,7 +33,9 @@ export async function handler(event, context) {
         "ScreenTime": data.screenTime,
         "Fatigue": data.fatigue,
         "Speed": data.speed,
-        "Accuracy": data.accuracy
+        "Accuracy": data.accuracy,
+        "FirstTestTime": data.firstTestTime || new Date().toISOString(),
+        "RemindersSentCount": 0
       };
     }
 
