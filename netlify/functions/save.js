@@ -80,7 +80,7 @@ export async function handler(event, context) {
              <p>Повертайся завтра о тій самій годині — нагадаємо.</p>
              <p>— команда NeRN</p>`;
 
-      await fetch("https://api.resend.com/emails", {
+      const resendResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
@@ -93,6 +93,16 @@ export async function handler(event, context) {
               html: emailHtml
           })
       });
+
+      const resendResult = await resendResponse.json();
+      
+      // Якщо Resend видає помилку, зупиняємо виконання і виводимо її
+      if (!resendResponse.ok) {
+        return {
+          statusCode: resendResponse.status,
+          body: JSON.stringify({ error: "Resend API Error", details: resendResult })
+        };
+      }
     }
 
     // 3. Успішна відповідь фронтенду
