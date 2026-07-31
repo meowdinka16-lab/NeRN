@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeRN — Когнітивний сенсор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  /* Глибока темно-синя палітра */
+  :root {
+    --bg: #0A0B11; 
+    --surface: #12131C; 
+    --surface-light: #1A1C29; 
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --text-main: #EDEDF0;
+    --text-muted: #8A8A93;
+    --accent-lavender: #B4A5D8;
+    --accent-mint: #83D6BC;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { font-family: 'Playfair Display', serif; font-weight: 400; line-height: 1.1; }
+  h1 { font-size: 4.5rem; letter-spacing: -0.02em; margin-bottom: 24px; }
+  h2 { font-size: 3rem; margin-bottom: 16px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.25rem; margin-bottom: 12px; color: var(--text-main); font-family: 'Inter', sans-serif; font-weight: 600; }
+  em { font-style: italic; color: var(--accent-lavender); }
+  p { color: var(--text-muted); font-size: 1rem; font-weight: 400; margin-bottom: 16px; line-height: 1.6; }
+  
+  .overline {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--text-muted); margin-bottom: 16px; display: block; font-weight: 600; font-family: 'Inter', sans-serif;
+  }
+
+  /* Навігація */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 48px; border-bottom: 1px solid var(--border);
+    background: rgba(10, 11, 17, 0.8); backdrop-filter: blur(12px);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  }
+  .logo { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.03em; }
+  
+  .waitlist-form { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
+  .waitlist-form input { background: transparent; border: none; color: var(--text-main); padding: 8px 16px; outline: none; font-family: 'Inter', sans-serif; width: 200px; }
+  .waitlist-form button { background: var(--surface-light); color: var(--text-main); border: 1px solid var(--border); padding: 8px 20px; border-radius: 99px; cursor: pointer; transition: 0.3s; }
+  .waitlist-form button:hover { background: var(--text-main); color: var(--bg); }
+
+  .container { width: 100%; max-width: 1000px; margin: 120px auto 0; padding: 0 24px 80px; }
+  .screen { display: none; animation: fadeIn 0.6s ease forwards; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .hero { text-align: center; padding: 80px 0; }
+  .hero p.subtitle { max-width: 600px; margin: 0 auto 32px; font-size: 1.15rem; }
+  
+  .banner-welcome-back { background: rgba(131, 214, 188, 0.1); border: 1px solid var(--accent-mint); color: var(--accent-mint); padding: 12px 24px; border-radius: 99px; display: inline-flex; align-items: center; gap: 12px; margin-bottom: 32px; font-size: 0.95rem; cursor: pointer; transition: 0.3s; }
+  .btn-primary { background: var(--text-main); color: var(--bg); border: none; padding: 18px 40px; border-radius: 99px; font-size: 1.1rem; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; transition: transform 0.2s ease; }
+  .btn-primary:hover { transform: scale(0.98); }
+  .btn-secondary { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 14px 32px; border-radius: 99px; font-size: 1rem; font-family: 'Inter', sans-serif; cursor: pointer; transition: 0.3s; }
+
+  /* FEATURES БЛОК */
+  .features-header { 
+    margin-top: 100px; padding: 40px 0; text-align: left;
+    border-bottom: 1px solid var(--border); margin-bottom: 40px;
+  }
+  .features-header h2 { font-size: 3.5rem; margin-bottom: 12px; }
+  .features-header em { color: var(--text-main); } 
+  .features-header p { font-size: 1.1rem; max-width: 600px; margin: 0; color: var(--text-muted); }
+  
+  .features-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px; 
+  }
+  
+  .f-card {
+    background: var(--surface); 
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px; 
+    display: flex; flex-direction: column;
+    transition: all 0.3s ease;
+  }
+  .f-card:hover { border-color: var(--border-hover); }
+
+  .f-tag {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--text-muted); margin-bottom: 20px; display: block; font-weight: 600;
+  }
+
+  .f-quote-block {
+    padding: 32px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .f-quote-block h2 { font-size: 2.8rem; line-height: 1.2; margin-bottom: 24px; color: var(--text-main); }
+  
+  .mockup-ui {
+    margin-top: 24px; background: rgba(255,255,255,0.03); 
+    border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .mockup-icon {
+    width: 24px; height: 24px; background: rgba(255,255,255,0.1); 
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: bold; color: var(--text-muted);
+  }
+  .mockup-text strong { display: block; font-size: 0.85rem; color: var(--text-main); margin-bottom: 2px; }
+  .mockup-text span { display: block; font-size: 0.75rem; color: var(--text-muted); }
+
+  .mockup-btn {
+    margin-top: 24px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; text-align: center;
+    font-size: 0.75rem; font-weight: 600; color: var(--accent-mint);
+  }
+
+  @media (max-width: 800px) { .features-grid { grid-template-columns: 1fr; } }
+
+  /* ІНШІ ЕКРАНИ */
+  .test-area { max-width: 700px; margin: 0 auto; }
+  .target-text { font-size: 1.2rem; color: var(--text-main); background: var(--surface); padding: 32px; border-radius: 16px; margin-bottom: 24px; border: 1px solid var(--border); line-height: 1.8; user-select: none; }
+  textarea.test-input { width: 100%; min-height: 160px; resize: none; background: transparent; border: 1px solid var(--border); border-radius: 16px; padding: 24px; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 1.2rem; line-height: 1.8; margin-bottom: 24px; transition: 0.3s; }
+  textarea.test-input:focus { outline: none; border-color: var(--accent-lavender); }
+  .form-group { margin-bottom: 24px; }
+  .form-group label { display: block; color: var(--text-muted); margin-bottom: 8px; font-size: 0.95rem; }
+  .form-group input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 1rem; }
+  .avatar-container { text-align: center; margin: 40px 0; }
+  .orb { width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--accent-mint), transparent); box-shadow: 0 0 80px rgba(131, 214, 188, 0.15); margin: 0 auto 32px; animation: breathe 4s infinite alternate ease-in-out; }
+  .score-val { font-family: 'Playfair Display', serif; font-size: 5rem; line-height: 1; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
+  .metric-box { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: center; }
+  .metric-val { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--text-main); }
+  .metric-lbl { font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; line-height: 1.3; }
+  .week-tracker { margin-top: 60px; padding: 40px; background: var(--surface-light); border-radius: 24px; border: 1px solid var(--border); text-align: center; }
+  .action-buttons { display: flex; justify-content: center; gap: 16px; margin-top: 32px; flex-wrap: wrap; }
+  .success-msg { color: var(--accent-mint); font-size: 0.9rem; display: none; margin-left: 16px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">NeRN</div>
+  <div style="display: flex; align-items: center;">
+    <div class="waitlist-form">
+      <input type="email" id="waitlist-email" placeholder="your@email.com">
+      <button id="btn-waitlist">Join Waitlist</button>
+    </div>
+    <span class="success-msg" id="waitlist-success">Записано!</span>
+  </div>
+</nav>
+
+<div class="container">
+  
+  <section id="s-landing" class="screen active">
+    <div class="hero">
+      <div id="welcome-back-container"></div>
+      <div class="overline" style="color: var(--text-muted); text-align: center;">Когнітивний сенсор — Закрита Бета</div>
+      <h1 style="text-align: center;">Наскільки ти втомлений<br><em style="color: var(--accent-lavender);">саме зараз?</em></h1>
+      <p class="subtitle" style="color: var(--text-main);">Надрукуй одне речення. Я подивлюся на швидкість, рівність, виправлення — і покажу твій ресурс уваги просто зараз.</p>
+      <button class="btn-primary" id="btn-start">Розпочати сьогоднішній вимір</button>
+    </div>
+
+    <div class="features-header">
+      <span class="overline">HOW IT WORKS</span>
+      <h2>Побудовано навколо тіла,<br><em>а не навколо змісту.</em></h2>
+      <p>Функції майбутнього додатку NeRN.</p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 01 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 01</span>
+        <h3>Когнітивний шлагбаум</h3>
+        <p>Коли ти повен сил, програма лише м'яко перепитає: «Це зараз важливо?». Але якщо ти виснажений, вона запропонує пройти швидкий тест пам'яті перед входом, щоб перервати імпульсивне гортання стрічки.</p>
+        <div class="mockup-ui">
+          <div class="mockup-icon">+</div>
+          <div class="mockup-text">
+            <strong>NeRN виявив втому</strong>
+            <span>Варіативність ритму: +38% — візьмемо паузу 90 сек?</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 02 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 02</span>
+        <h3>100% Приватність</h3>
+        <p>Ми аналізуємо лише те, як швидко та впевнено рухаються твої пальці, а не те, які саме слова ти пишеш. Твої особисті повідомлення та думки залишаються виключно на твоєму телефоні.</p>
+        <div class="mockup-btn">Verified on-device — zero telemetry</div>
+      </div>
+
+      <!-- Feature 03 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 03</span>
+        <h3>ШІ-Планувальник</h3>
+        <p>Висипай потік думок зранку. Отримай чітко структурований список задач (To-Do list) з пріоритетами. Цей інструмент синхронізується з твоїм вікном уваги та допомагає планувати день без перевантаження.</p>
+        <div class="mockup-ui" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; width: 100%; color: var(--text-muted);">треба доробити слайди, відписати максу...</div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-size: 0.75rem; width: 100%; color: var(--text-main); line-height: 1.5;">
+            <strong>1. Пофіксити баг — 20 хв</strong>
+            2. Відписати Максу — 5 хв<br>
+            3. Слайди — після перерви
+          </div>
+        </div>
+      </div>
+
+      <!-- Quote Block -->
+      <div class="f-quote-block">
+        <h2>"Якість твоєї уваги<br>—<br><em>це якість твого життя."</em></h2>
+        <span class="overline" style="color: var(--text-muted); margin: 0; text-transform: none; letter-spacing: normal;">— Фундаментальний принцип NeRN</span>
+      </div>
+
+      <!-- Feature 04 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 04</span>
+        <h3>Нейро-Аватар</h3>
+        <p>Візуальне відображення стану твого мозку. Він світиться від годин сфокусованої роботи, але тьмяніє від нічного скролінгу й мультитаскінгу. Своїм станом та прогресом можна легко поділитися з друзями.</p>
+      </div>
+
+      <!-- Feature 05 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 05</span>
+        <h3>Фокус-сесії без провини</h3>
+        <p>Обирай 25, 50 хвилин або власний час. Аватар реагує на твою зосередженість наживо. Якщо ти відволікся, з'явиться м'яке нагадування. Жодних штрафних балів чи сорому.</p>
+      </div>
+
+      <!-- Feature 06 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 06</span>
+        <h3>Сірий режим</h3>
+        <p>Зменшення цифрової спокуси. Коли ти перевищуєш власний ліміт часу в соцмережах, кольори на екрані поступово зникають і стають чорно-білими. Це знімає дофаміновий гачок і допомагає відкласти телефон.</p>
+      </div>
+
+      <!-- Feature 07 -->
+      <div class="f-card">
+        <span class="f-tag">Feature 07</span>
+        <h3>Бережне відновлення</h3>
+        <p>Коли твій ресурс занизький або ти щойно завершив важке завдання, додаток запропонує коротку техніку для відпочинку. Наприклад, спокійне «квадратне дихання», щоб швидко повернути ясність думок.</p>
+      </div>
+      
+      <!-- Feature 08 -->
+      <div class="f-card" style="grid-column: 1 / -1;">
+        <span class="f-tag">Feature 08</span>
+        <h3>Тести для перевірки уваги</h3>
+        <p style="max-width: 700px;">Раз на тиждень весела гра Струпа (де слово «червоний» написане синім кольором) допомагає оцінити твою когнітивну гнучкість. А якщо ти мало друкуєш, ми використовуємо простий тест на швидкість реакції (натискання на екран).</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ЕКРАН ТЕСТУВАННЯ -->
+  <section id="s-test" class="screen test-area">
+    <div class="overline" style="text-align: center;">Аналіз мікромоторики</div>
+    <h2 style="text-align: center; margin-bottom: 24px;">Надрукуй текст нижче</h2>
+    <p style="text-align: center; margin-bottom: 40px;">Ми змінюємо текст щодня, щоб ти його не завчав. Друкуй у своєму природному темпі.</p>
+    
+    <div class="target-text" id="target-text">Завантаження тексту...</div>
+    <textarea id="ta-input" class="test-input" placeholder="Почни друкувати тут..." autocomplete="off" spellcheck="false"></textarea>
+    <button class="btn-primary" id="btn-finish-test" style="width: 100%;" disabled>Завершити аналіз</button>
+  </section>
+
+  <!-- ЕКРАН КОНТЕКСТУ -->
+  <section id="s-context" class="screen test-area">
+    <div class="overline" style="text-align: center;">Синхронізація даних</div>
+    <h2 style="text-align: center; margin-bottom: 40px;">Твоє фізичне тло</h2>
+    <p style="text-align: center; margin-bottom: 32px;">Для чистоти експерименту вкажи свої параметри за останню добу. Дані потрібні для виявлення закономірностей.</p>
+    
+    <div class="form-group">
+      <label>Сон минулої ночі (годин)</label>
+      <input type="number" id="inp-sleep" placeholder="Напр. 7.5" step="0.5" required>
+    </div>
+    <div class="form-group">
+      <label>Екранний час (годин)</label>
+      <input type="number" id="inp-screen" placeholder="Напр. 5" step="0.5" required>
+    </div>
+    <div class="form-group">
+      <label>Суб'єктивна втома (1 - повен сил, 5 - виснажений)</label>
+      <input type="number" id="inp-fatigue" placeholder="1-5" min="1" max="5" required>
+    </div>
+    <!-- ОНОВЛЕНИЙ ІНПУТ ЕМЕЙЛУ -->
+    <div class="form-group">
+      <label>Email (необов'язково, для отримання тижневих інсайтів)</label>
+      <input type="email" id="inp-email-insight" placeholder="your@email.com">
+    </div>
+    
+    <button class="btn-primary" id="btn-submit-insight" style="width: 100%;">Показати мій NeRN Index</button>
+  </section>
+
+  <!-- ЕКРАН РЕЗУЛЬТАТУ ТА АНАЛІТИКИ -->
+  <section id="s-result" class="screen">
+    <div class="avatar-container">
+      <div class="orb" id="avatar-orb"></div>
+      <div class="score-val" id="score-val">--%</div>
+      <p style="margin-top: 16px; font-size: 1.2rem; color: var(--text-main);">Твій Фокус-ресурс зараз</p>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-box">
+        <div class="metric-val" id="m-speed">--</div>
+        <div class="metric-lbl">Символів/хв (Швидкість)</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-pauses">--</div>
+        <div class="metric-lbl">Сер. пауза (мс)</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-accuracy">--</div>
+        <div class="metric-lbl">Точність тексту (%)</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-backspaces">--</div>
+        <div class="metric-lbl">Виправлень (Backspace)</div>
+      </div>
+    </div>
+
+    <div class="week-tracker">
+      <h3>Твій тиждень</h3>
+      <p style="font-size: 1.1rem; color: var(--text-main);" id="week-status">Вимірів зроблено: 1 з 7. Ще 6 — і картина стане чіткою.</p>
+      <p id="week-insight" style="margin-top: 12px; color: var(--text-muted);">Помічаю закономірності… (1 з 3 вимірів зі сном). Ще трохи даних — і покажу звʼязок.</p>
+      
+      <p style="font-size: 0.9rem; margin-top: 24px; color: var(--text-muted);">Повертайся раз на день приблизно в один час — стан коливається протягом дня, тож рівні умови дають чистіший сигнал.</p>
+      
+      <div class="action-buttons">
+        <button class="btn-primary" id="btn-test-again">Новий вимір</button>
+        <button class="btn-secondary" id="btn-download-csv">Завантажити мої дані</button>
+        <button class="btn-secondary" id="btn-reset-data" style="color: #ff6b6b; border-color: rgba(255,107,107,0.3);">Почати спочатку</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// --- КОНФІГУРАЦІЯ AIRTABLE WEBHOOK ---
+const WEBHOOK_URL = "/.netlify/functions/save";
+
+const textPool = [
+  "Якість нашої уваги визначає те, як ми проживаємо кожен день. Я друкую цей текст у своєму звичайному темпі, щоб система змогла проаналізувати мій ритм та мікропаузи.",
+  "Сьогодні звичайний день, і я спокійно набираю цей рядок, щоб показати свій темп. Небо ясне, хочеться просто сидіти та нікуди не поспішати. Мої думки течуть рівно.",
+  "Люблю, коли є час просто пройтися вулицею і подивитися на дерева біля дому. Цей короткий текст допоможе системі зрозуміти мій поточний стан фокусу.",
+  "Мій план на сьогодні простий: трохи почитати, зробити кілька важливих справ і вчасно лягти відпочивати. Ритм моїх пальців розкаже більше, ніж просто слова.",
+  "Зараз я зосереджений на наборі цього речення. Клавіатура фіксує кожне моє натискання, але залишає зміст повністю приватним та безпечним."
+];
+
+// --- ГЕНЕРАЦІЯ АБО ОТРИМАННЯ АНОНІМНОГО ID КОРИСТУВАЧА ---
+let currentUserId = localStorage.getItem('nern_user_id');
+if (!currentUserId) {
+  currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+  localStorage.setItem('nern_user_id', currentUserId);
+}
+
+let sessions = JSON.parse(localStorage.getItem('nern_sessions')) || [];
+let lastTextIndex = parseInt(localStorage.getItem('nern_text_index')) || 0;
+
+if (sessions.length > 0) {
+  const wbContainer = document.getElementById('welcome-back-container');
+  wbContainer.innerHTML = `<div class="banner-welcome-back" onclick="switchScreen('s-test')">
+    👋 Ти вже робив ${sessions.length} вимір(и). Продовжити тиждень →
+  </div>`;
+  const lastEmail = sessions[sessions.length - 1].email;
+  if (lastEmail) document.getElementById('inp-email-insight').value = lastEmail;
+}
+
+function setDailyText() {
+  lastTextIndex = (lastTextIndex + 1) % textPool.length;
+  localStorage.setItem('nern_text_index', lastTextIndex);
+  document.getElementById('target-text').innerText = textPool[lastTextIndex];
+}
+
+function switchScreen(showId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(showId).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('btn-start').addEventListener('click', () => { setDailyText(); switchScreen('s-test'); });
+document.getElementById('btn-test-again').addEventListener('click', () => {
+  setDailyText(); document.getElementById('ta-input').value = '';
+  document.getElementById('btn-finish-test').disabled = true;
+  keystrokes = []; backspaceCount = 0; switchScreen('s-test');
+});
+
+document.getElementById('btn-waitlist').addEventListener('click', async () => {
+  const email = document.getElementById('waitlist-email').value;
+  if (!email) return;
+  const payload = { type: "waitlist", email: email, timestamp: new Date().toISOString() };
+  try {
+    if (WEBHOOK_URL !== "ВСТАВ_СВІЙ_WEBHOOK_URL_ТУТ") {
+      await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    }
+    const successMsg = document.getElementById('waitlist-success');
+    successMsg.style.display = "inline"; setTimeout(() => successMsg.style.display = "none", 3000);
+    document.getElementById('waitlist-email').value = '';
+  } catch(e) { console.error(e); }
+});
+
+const taInput = document.getElementById('ta-input');
+const btnFinishTest = document.getElementById('btn-finish-test');
+let keystrokes = [];
+let backspaceCount = 0;
+
+taInput.addEventListener('keydown', e => { if (e.key === 'Backspace') backspaceCount++; });
+taInput.addEventListener('input', e => {
+  const t = performance.now();
+  if (e.inputType && e.inputType.startsWith('insert')) keystrokes.push(t);
+  const targetTextLength = document.getElementById('target-text').innerText.length;
+  btnFinishTest.disabled = taInput.value.length < (targetTextLength * 0.8);
+});
+taInput.addEventListener('paste', e => { e.preventDefault(); alert('Текст потрібно надрукувати самостійно.'); });
+
+function levenshteinDistance(a, b) {
+  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+let metricsCache = {};
+
+btnFinishTest.addEventListener('click', () => {
+  const typedText = taInput.value.trim();
+  const targetText = document.getElementById('target-text').innerText.trim();
+  const n = keystrokes.length;
+  let speedCPM = 0, avgPause = 0;
+  if (n > 1) {
+    const durationMin = (keystrokes[n-1] - keystrokes[0]) / 60000;
+    speedCPM = Math.round(n / durationMin);
+    const pauses = [];
+    for (let i = 1; i < n; i++) pauses.push(keystrokes[i] - keystrokes[i-1]);
+    avgPause = Math.round(pauses.reduce((a,b)=>a+b,0) / pauses.length);
+  }
+  const distance = levenshteinDistance(targetText, typedText);
+  const maxLength = Math.max(targetText.length, typedText.length);
+  const accuracyText = Math.max(0, 100 - ((distance / maxLength) * 100));
+
+  metricsCache = { speed: speedCPM, pauses: avgPause, accuracy: accuracyText, backspaces: backspaceCount };
+  switchScreen('s-context');
+});
+
+function renderWeekAnalytics() {
+  const count = sessions.length;
+  const statusEl = document.getElementById('week-status');
+  const insightEl = document.getElementById('week-insight');
+  
+  if (count < 7) { statusEl.textContent = `Вимірів зроблено: ${count} з 7. Ще ${7 - count} — і картина стане чіткою.`; } 
+  else { statusEl.textContent = `Вітаємо! Тиждень завершено (${count} вимірів).`; }
+
+  if (count < 3) { insightEl.textContent = `Помічаю закономірності… (${count} з 3 вимірів зі сном). Ще трохи даних — і покажу звʼязок.`; } 
+  else {
+    let goodSleepScores = sessions.filter(s => s.sleep >= 7).map(s => s.score);
+    let badSleepScores = sessions.filter(s => s.sleep < 7).map(s => s.score);
+    let avgGood = goodSleepScores.length ? (goodSleepScores.reduce((a,b)=>a+b,0)/goodSleepScores.length).toFixed(0) : '--';
+    let avgBad = badSleepScores.length ? (badSleepScores.reduce((a,b)=>a+b,0)/badSleepScores.length).toFixed(0) : '--';
+    insightEl.innerHTML = `<strong style="color: var(--text-main);">Помічено зв'язок:</strong> Коли ти спиш 7+ годин, твій середній фокус складає <strong>${avgGood}%</strong>. Коли менше — <strong>${avgBad}%</strong>.`;
+  }
+}
+
+document.getElementById('btn-submit-insight').addEventListener('click', async () => {
+  const sleep = document.getElementById('inp-sleep').value;
+  const screenTime = document.getElementById('inp-screen').value;
+  const fatigue = document.getElementById('inp-fatigue').value;
+  const email = document.getElementById('inp-email-insight').value.trim();
+
+  if(!sleep || !screenTime || !fatigue) { alert("Заповніть числові поля для розрахунку."); return; }
+
+  let baseScore = 75;
+  if (metricsCache.speed > 250) baseScore += 10;
+  if (metricsCache.accuracy > 95) baseScore += 10;
+  if (metricsCache.backspaces > 10) baseScore -= 10;
+  if (fatigue >= 4) baseScore -= 15;
+  const finalScore = Math.max(10, Math.min(100, Math.round(baseScore)));
+
+  const sessionData = {
+    date: new Date().toLocaleDateString(),
+    userId: currentUserId, // ДОДАНО АНОНІМНИЙ ID
+    email: email,
+    score: finalScore,
+    sleep: parseFloat(sleep),
+    screenTime: parseFloat(screenTime),
+    fatigue: parseInt(fatigue),
+    speed: metricsCache.speed,
+    accuracy: metricsCache.accuracy
+  };
+  sessions.push(sessionData);
+  localStorage.setItem('nern_sessions', JSON.stringify(sessions));
+
+  switchScreen('s-result');
+  document.getElementById('score-val').textContent = finalScore + "%";
+  document.getElementById('m-speed').textContent = metricsCache.speed;
+  document.getElementById('m-pauses').textContent = metricsCache.pauses;
+  document.getElementById('m-accuracy').textContent = metricsCache.accuracy.toFixed(1) + "%";
+  document.getElementById('m-backspaces').textContent = metricsCache.backspaces;
+
+  const orb = document.getElementById('avatar-orb');
+  if (finalScore < 40) {
+    orb.style.background = "radial-gradient(circle at 30% 30%, #B4A5D8, transparent)";
+    orb.style.boxShadow = "0 0 80px rgba(180, 165, 216, 0.2)";
+  } else {
+    orb.style.background = "radial-gradient(circle at 30% 30%, var(--accent-mint), transparent)";
+    orb.style.boxShadow = "0 0 80px rgba(131, 214, 188, 0.15)";
+  }
+
+  renderWeekAnalytics();
+
+  const payload = { type: "insight", ...sessionData, timestamp: new Date().toISOString() };
+  try {
+    if (WEBHOOK_URL !== "ВСТАВ_СВІЙ_WEBHOOK_URL_ТУТ") {
+      await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    }
+  } catch(e) { console.error(e); }
+});
+
+document.getElementById('btn-download-csv').addEventListener('click', () => {
+  if (sessions.length === 0) return alert("Немає даних для завантаження.");
+  const headers = "Дата,Email,Фокус(%),Сон(год),Екранний_час(год),Втома(1-5),Швидкість,Точність(%)\n";
+  const rows = sessions.map(s => `${s.date},${s.email},${s.score},${s.sleep},${s.screenTime},${s.fatigue},${s.speed},${s.accuracy.toFixed(1)}`).join("\n");
+  const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", "nern_data.csv");
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+document.getElementById('btn-reset-data').addEventListener('click', () => {
+  if(confirm("Ти впевнений, що хочеш стерти всі свої виміри на цьому пристрої?")) {
+    sessions = []; localStorage.removeItem('nern_sessions'); location.reload();
+  }
+});
+</script>
+</body>
+</html>
