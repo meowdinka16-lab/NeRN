@@ -7,8 +7,8 @@ export async function handler(event, context) {
     const data = JSON.parse(event.body);
     const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
     const AIRTABLE_BASE_ID = "appOnjwF4xcrYZUER";
-    const TABLE_NAME = "NeRN Table 1";
-
+    const TABLE_NAME = "tbl0A8bcJjNlpEyhG"; // Замінили назву на ID таблиці
+    
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
       return { 
         statusCode: 500, 
